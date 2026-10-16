@@ -1,2 +1,19 @@
-
-. 
+{
+    "format": 1,
+    "id": "com.autumnvn.notypinganimation",
+    "name": "NoTypingAnimation",
+    "description": "Disables the CPU-intensive typing dots animation. A plugin port from Vencord.",
+    "author": "AutumnVN, btmc727",
+    "version": "1.0.0",
+    "dependencies": {
+        "revenge.api": {
+            "version": ">=1 <2"
+        },
+        "discord": {
+            "version": "*"
+        }
+    },
+    "dist": {
+        "script": "index.js"
+    }
+}

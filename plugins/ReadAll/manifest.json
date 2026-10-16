@@ -6,7 +6,8 @@
   "author": "OTKUSteyler & VMUser8.1",
   "version": "1.0.1",
   "dependencies": {
-    "revenge.api": { "version": "*" }
+    "revenge.api": { "version": "*" },
+    "discord": { "version": "*" }
   },
   "dist": {
     "script": "dist/index.js"

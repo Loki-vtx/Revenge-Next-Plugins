@@ -78,6 +78,40 @@ export function after(
   };
 }
 
+/* ---------- slash commands ---------- */
+// Registers into Discord's own command list (built-in command shape), so it does
+// not depend on any Revenge API. Needs the command store to have loaded, hence
+// it throws if it is not found yet and the caller retries.
+
+export function registerCommand(cmd: {
+  name: string;
+  description: string;
+  options?: any[];
+  execute: (args: any[], ctx: any) => any;
+}): () => boolean {
+  const store = findByProps("getBuiltInCommands");
+  if (!store) throw new Error("command registry not found");
+
+  const full = {
+    id: `readallplus-${cmd.name}`,
+    applicationId: "-1",
+    type: 1,
+    inputType: 1,
+    displayName: cmd.name,
+    displayDescription: cmd.description,
+    ...cmd,
+    options: (cmd.options ?? []).map((o) => ({
+      displayName: o.name,
+      displayDescription: o.description,
+      ...o,
+    })),
+  };
+
+  return after("getBuiltInCommands", store, (_args, res) =>
+    Array.isArray(res) ? [...res, full] : res
+  );
+}
+
 /* ---------- React / React Native (resolved lazily, after Discord boots) ---------- */
 
 let _React: any;
@@ -141,4 +175,4 @@ export function choose(
   options: { text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }[]
 ) {
   getRN().Alert.alert(title, message, options);
-}
+                                }

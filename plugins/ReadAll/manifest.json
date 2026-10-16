@@ -2,14 +2,18 @@
   "format": 1,
   "id": "com.otkusteyler.readallplus",
   "name": "Read All+",
-  "description": "Adds a button under the server list to mark all unread servers and DMs as read, with per-server and per-DM exclusions.",
-  "author": "OTKUSteyler & VMUser8.1",
-  "version": "1.0.1",
+  "description": "Adds a button under the server list to mark all unread servers and DMs as read, with per-server and per-DM exclusion.",
+  "author": "OTKUSteyler & VMUsed8.1",
+  "version": "0.0.1 alpha",
   "dependencies": {
-    "revenge.api": { "version": "*" },
-    "discord": { "version": "*" }
+    "revenge.api": {
+      "version": ">=1 <2"
+    },
+    "discord": {
+      "version": "*"
+    }
   },
   "dist": {
-    "script": "dist/index.js"
+    "script": "index.js"
   }
 }

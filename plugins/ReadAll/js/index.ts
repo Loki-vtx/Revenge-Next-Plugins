@@ -1,61 +1,47 @@
-import { TAG, after, getReact, getRN } from "./compat";
-import ReadButton, { MARGIN, TILE } from "./ReadButton";
+import { TAG, registerCommand } from "./compat";
+import { Mode, executeClear } from "./clear";
 import Settings from "./settings";
 
-let unpatchers: (() => boolean)[] = [];
-const patched = new WeakSet<object>();
+let unregister: (() => boolean) | undefined;
 let retryTimer: ReturnType<typeof setInterval> | undefined;
 
-const isUseGuildsBarProps = (exports: any): boolean =>
-  typeof exports?.default === "function" && exports.default.name === "useGuildsBarProps";
-
-function patchFooter(ret: any) {
-  const ldp = ret?.listDataProps;
-  if (!ldp || patched.has(ldp)) return;
-  if (typeof ldp.footerSize !== "function" || typeof ldp.renderFooter !== "function") return;
-
-  const origSize = ldp.footerSize;
-  const origRender = ldp.renderFooter;
-  const extra = TILE + 2 * MARGIN;
-
-  ldp.footerSize = () => origSize.call(ldp) + extra;
-  ldp.renderFooter = () =>
-    getReact().createElement(
-      getRN().View,
-      { style: { alignSelf: "stretch" }, collapsable: false },
-      origRender.call(ldp),
-      getReact().createElement(ReadButton)
-    );
-
-  patched.add(ldp);
-}
-
-function scanRegistry(): number {
-  const modules = (globalThis as any)?.modules;
-  if (!modules) return 0;
-
-  let count = 0;
-  for (const id in modules) {
-    const def = modules[id];
-    if (!def?.isInitialized) continue;
-    const exports = def.publicModule?.exports;
-    if (!exports || !isUseGuildsBarProps(exports)) continue;
-    try {
-      unpatchers.push(after("default", exports, (_args, ret) => patchFooter(ret)));
-      count++;
-    } catch (e) {
-      console.log(TAG, `Failed to patch module ${id}:`, e);
-    }
+function register(): boolean {
+  try {
+    unregister = registerCommand({
+      name: "readall",
+      description: "Mark unread servers and DMs as read (respects your exclusion lists)",
+      options: [
+        {
+          name: "scope",
+          description: "What to mark as read (default: everything)",
+          type: 3, // STRING
+          required: false,
+          choices: [
+            { name: "all", displayName: "Everything", value: "all" },
+            { name: "servers", displayName: "Servers only", value: "servers" },
+            { name: "dms", displayName: "DMs only", value: "dms" },
+          ],
+        },
+      ],
+      execute: (args) => {
+        const value = args?.find((a: any) => a.name === "scope")?.value;
+        const mode: Mode = value === "servers" || value === "dms" ? value : "all";
+        executeClear(mode);
+      },
+    });
+    return true;
+  } catch (e) {
+    return false;
   }
-  return count;
 }
 
 export function start() {
-  if (scanRegistry() > 0) return;
+  if (register()) return;
   let ticks = 0;
   retryTimer = setInterval(() => {
     ticks++;
-    if (scanRegistry() > 0 || ticks >= 30) {
+    if (register() || ticks >= 30) {
+      if (ticks >= 30) console.log(TAG, "Could not find the command registry");
       clearInterval(retryTimer);
       retryTimer = undefined;
     }
@@ -65,8 +51,8 @@ export function start() {
 export function stop() {
   if (retryTimer) clearInterval(retryTimer);
   retryTimer = undefined;
-  unpatchers.forEach((u) => u());
-  unpatchers = [];
+  unregister?.();
+  unregister = undefined;
 }
 
 export const settings = Settings;
